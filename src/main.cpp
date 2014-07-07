@@ -27,6 +27,8 @@ int main() {
 
     int width = 1280;
     int height = 720;
+
+    SDL_Event event;
     
     // testing
     std::string p = assetPath();
@@ -49,18 +51,12 @@ int main() {
 
     GLuint programID = loadShaders("basic.vert", "basic.frag");
     
+    bool gameRunning = true;
+    bool gamePaused = false;
+
     GLuint vao;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
-
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-
-    SDL_GL_SwapWindow(window);
-    SDL_Delay(500);
-
-    glClearColor(0.0f, 0.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
     
     const GLfloat vertices[] = {
         0.0f,  0.75f, 0.0f, // Vertex 1 (X, Y)    
@@ -78,22 +74,42 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, vbo);
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
 
+    GLint uniColor = glGetUniformLocation(programID, "c");
     glUseProgram(programID);
 
-    GLint uniColor = glGetUniformLocation(programID, "c");
-    glUniform3f(uniColor, 0.0f, 1.0f, 0.0f);
-    std::cout << programID << std::endl;
-    std::cout << uniColor << std::endl;
+    while(gameRunning) {
 
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+        if((SDL_PollEvent(&event))) {
+            if (event.type == SDL_QUIT) {
+                gameRunning = false;
+                break;
+            }
+
+            if (event.type == SDL_KEYDOWN) {
+                if(event.key.keysym.sym == SDLK_ESCAPE) {
+                    gameRunning = false;
+                    break;
+                }
+
+                if(event.key.keysym.sym == SDLK_SPACE) {
+                    gamePaused = gamePaused ? false : true;
+                }
+            }
+        }
+
+       
+        if (!gamePaused) {
+            glUniform3f(uniColor, 0.0f, 1.0f, 1.0f);
+            glDrawArrays(GL_TRIANGLES, 0, 3);
+            SDL_GL_SwapWindow(window);
+        }      
+    }
+
+    glDeleteProgram(programID);
     glDisableVertexAttribArray(0);
-
-    SDL_GL_SwapWindow(window);
-
-    SDL_Delay(1000);
-
     glDeleteBuffers(1, &vbo);
     glDeleteVertexArrays(1, &vao);
+    
 
     SDL_GL_DeleteContext(context);
     SDL_DestroyWindow(window);
