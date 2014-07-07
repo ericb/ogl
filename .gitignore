@@ -1,4 +1,10 @@
+assets/image/*
+assets/sound/*
 build/debug/*
 build/release/*
-3DTEST
 bin/3DTEST
+src/gl3w.c
+src/header/rapidjson
+src/header/glm
+
+
