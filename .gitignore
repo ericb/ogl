@@ -6,5 +6,6 @@ bin/3DTEST
 src/gl3w.c
 src/header/rapidjson
 src/header/glm
+src/header/config.h
 
 
