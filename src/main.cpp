@@ -27,6 +27,8 @@ int main() {
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION,3);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 16);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES,16);
 
     int width = 1280;
     int height = 720;
@@ -56,14 +58,6 @@ int main() {
     // lets add some Model-View-Projection!
     glm::mat4 Projection = glm::perspective(70.0f, 16.0f / 9.0f, 0.1f, 100.0f);
     
-    glm::mat4 View = glm::lookAt(
-        glm::vec3(4,3,3), // Camera is at (4,3,3), in World Space
-        glm::vec3(0,0,0), // and looks at the origin
-        glm::vec3(0,1,0)  // Head is up (set to 0,-1,0 to look upside-down)
-    );
-
-    glm::mat4 Model = glm::mat4(1.0f);  // Changes for each model !
-    glm::mat4 MVP = Projection * View * Model;
     GLuint MatrixID = glGetUniformLocation(programID, "MVP");
 
     bool gameRunning = true;
@@ -79,6 +73,8 @@ int main() {
         -0.5f, -0.5f, 0.0f  // Vertex 3 (X, Y)
     };
 
+    glm::vec3 camera_position = glm::vec3(4,3,3);
+
     GLuint vbo;
     glGenBuffers(1, &vbo);
 
@@ -92,7 +88,14 @@ int main() {
     GLint uniColor = glGetUniformLocation(programID, "c");
     glUseProgram(programID);
 
+    float currentTicks = SDL_GetTicks();
+    float lastTicks;
+    float deltaTime;
+
     while(gameRunning) {
+        lastTicks = currentTicks;
+        currentTicks = SDL_GetTicks();
+        deltaTime = (currentTicks - lastTicks) / 1000.0f;
 
         while(SDL_PollEvent(&event)) {
             switch (event.type) {
@@ -108,10 +111,42 @@ int main() {
                     if(event.key.keysym.sym == SDLK_SPACE) {
                         gamePaused = gamePaused ? false : true;
                     }
+
+                    if(event.key.keysym.sym == SDLK_UP) {
+                        camera_position += glm::vec3(0,5.0f * deltaTime,0);
+                    }
+
+                    if(event.key.keysym.sym == SDLK_DOWN) {
+                        camera_position += glm::vec3(0,-5.0f * deltaTime,0);
+                    }
+
+                    if(event.key.keysym.sym == SDLK_LEFT) {
+                        camera_position += glm::vec3(-5.0f * deltaTime,0,0);
+                    }
+
+                    if(event.key.keysym.sym == SDLK_RIGHT) {
+                        camera_position += glm::vec3(5.0f * deltaTime,0,0);
+                    }
+
+
             }
         }        
        
         if (!gamePaused) {
+
+            // clear the view
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            glm::mat4 View = glm::lookAt(
+                camera_position, // Camera is at (4,3,3), in World Space
+                glm::vec3(0,0,0), // and looks at the origin
+                glm::vec3(0,1,0)  // Head is up (set to 0,-1,0 to look upside-down)
+            );
+
+            glm::mat4 Model = glm::mat4(1.0f);  // Changes for each model !
+            glm::mat4 MVP = Projection * View * Model;
+
             glUniformMatrix4fv(MatrixID, 1, GL_FALSE, &MVP[0][0]);
             glUniform3f(uniColor, 0.0f, 1.0f, 1.0f);
             glDrawArrays(GL_TRIANGLES, 0, 3);
